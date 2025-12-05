@@ -1,0 +1,175 @@
+package cors // import "github.com/ahimsalabs/cors"
+
+Package cors provides CORS middleware with a fluent, composable API.
+
+Basic usage:
+
+    http.Handle("/api", cors.AnyOrigin().Wrap(handler))
+    http.Handle("/app", cors.Origins("https://app.com").MustWrap(handler))
+
+With error handling:
+
+    h, err := cors.Origins("https://app.com").AllowCredentials().Handler()
+    if err != nil {
+        log.Fatal(err)
+    }
+
+Multiple policies:
+
+    cors.Or(
+        cors.Origins("https://trusted.com").AllowCredentials(),
+        cors.AnyOrigin(),  // fallback without credentials
+    ).MustHandler()
+
+TYPES
+
+type CombinedRule struct {
+	// Has unexported fields.
+}
+    CombinedRule is a set of rules combined with Or. The first matching rule
+    wins.
+
+func Or(rules ...OriginMatcher) CombinedRule
+    Or combines multiple rules. The first matching rule wins. Accepts both Rule
+    and PublicRule.
+
+    Example:
+
+        cors.Or(
+            cors.Origins("https://trusted.com").AllowCredentials(),
+            cors.AnyOrigin(),  // fallback without credentials
+        )
+
+func (cr CombinedRule) Handler() (func(http.Handler) http.Handler, error)
+    Handler returns the CORS middleware. Returns an error if any rule has
+    invalid configuration.
+
+func (cr CombinedRule) MustHandler() func(http.Handler) http.Handler
+    MustHandler returns the CORS middleware, panicking if any rule configuration
+    is invalid.
+
+func (cr CombinedRule) MustWrap(h http.Handler) http.Handler
+    MustWrap directly wraps a handler with CORS middleware, panicking if any
+    rule configuration is invalid.
+
+func (cr CombinedRule) Wrap(h http.Handler) (http.Handler, error)
+    Wrap directly wraps a handler with CORS middleware. Returns an error if any
+    rule configuration is invalid.
+
+type OriginMatcher interface {
+	// Has unexported methods.
+}
+    OriginMatcher is implemented by origin matching rule types (PublicRule and
+    Rule). It cannot be implemented outside this package.
+
+type PublicRule struct {
+	// Has unexported fields.
+}
+    PublicRule is a CORS rule that allows any origin. It does not have
+    Rule.AllowCredentials because allowing credentials with any origin is a
+    security vulnerability (CORS spec violation). Use OriginFunc if you need
+    this escape hatch.
+
+func AnyOrigin() PublicRule
+    AnyOrigin creates a rule that matches all origins. Returns PublicRule which
+    does NOT have Rule.AllowCredentials. This prevents the dangerous AnyOrigin +
+    Credentials combination.
+
+func (r PublicRule) AllowHeaders(headers ...string) PublicRule
+    AllowHeaders returns a copy with the specified allowed headers.
+
+func (r PublicRule) AllowMethods(methods ...string) PublicRule
+    AllowMethods returns a copy with the specified allowed methods.
+
+func (r PublicRule) ExposeHeaders(headers ...string) PublicRule
+    ExposeHeaders returns a copy with the specified exposed headers.
+
+func (r PublicRule) Handler() func(http.Handler) http.Handler
+    Handler returns the CORS middleware. Panics if configuration is invalid
+    (e.g., forbidden methods/headers, negative MaxAge).
+
+func (r PublicRule) MaxAge(seconds int) PublicRule
+    MaxAge returns a copy with the specified preflight cache duration in
+    seconds. Use MaxAge(0) to explicitly disable preflight caching (overrides
+    browser default).
+
+func (r PublicRule) Wrap(h http.Handler) http.Handler
+    Wrap directly wraps a handler with CORS middleware.
+
+type Rule struct {
+	// Has unexported fields.
+}
+    Rule is a CORS rule for specific origins. It supports Rule.AllowCredentials
+    because specific origins are safe.
+
+func OriginFunc(fn func(origin string) bool) Rule
+    OriginFunc creates a Rule with a custom origin matching function. This is
+    the escape hatch for complex scenarios including dynamic origins.
+
+    Note: This allocates 1 object per request due to the function call.
+    For static origins, prefer Origins or OriginSuffix.
+
+    Warning: If you use this with Rule.AllowCredentials, ensure your function
+    validates origins strictly. A function that returns true for all origins
+    combined with credentials is a security vulnerability.
+
+func OriginSuffix(suffix string) Rule
+    OriginSuffix creates a Rule that matches origins by domain suffix.
+
+    Patterns:
+
+        "example.com"    → example.com and *.example.com
+        ".example.com"   → *.example.com only (subdomains)
+        "localhost:*"    → localhost on any port
+        ".example.com:*" → *.example.com on any port
+
+    Matching requires a dot boundary, preventing "evilexample.com" from matching
+    "example.com".
+
+func Origins(origins ...string) Rule
+    Origins creates a Rule that matches specific origins exactly.
+
+func (r Rule) AllowCredentials() Rule
+    AllowCredentials returns a copy with credentials enabled. When enabled,
+    Access-Control-Allow-Credentials: true is sent, allowing browsers to send
+    cookies and auth headers.
+
+    This also adds "Authorization" to allowed headers if not already present,
+    since most credentialed APIs use Bearer tokens.
+
+func (r Rule) AllowHeaders(headers ...string) Rule
+    AllowHeaders returns a copy with the specified allowed headers.
+
+func (r Rule) AllowMethods(methods ...string) Rule
+    AllowMethods returns a copy with the specified allowed methods.
+
+func (r Rule) ExposeHeaders(headers ...string) Rule
+    ExposeHeaders returns a copy with the specified exposed headers.
+
+func (r Rule) Handler() (func(http.Handler) http.Handler, error)
+    Handler returns the CORS middleware. Returns an error if the configuration
+    is invalid.
+
+    For scripts and tests where panics are acceptable, use MustHandler instead.
+
+func (r Rule) MaxAge(seconds int) Rule
+    MaxAge returns a copy with the specified preflight cache duration in
+    seconds. Use MaxAge(0) to explicitly disable preflight caching (overrides
+    browser default).
+
+func (r Rule) MustHandler() func(http.Handler) http.Handler
+    MustHandler returns the CORS middleware, panicking if the configuration is
+    invalid. Use this for variable initialization and tests:
+
+        var corsHandler = cors.Origins("https://app.com").MustHandler()
+
+    For production code that cannot tolerate panics, use Handler instead.
+
+func (r Rule) MustWrap(h http.Handler) http.Handler
+    MustWrap directly wraps a handler with CORS middleware, panicking if the
+    configuration is invalid.
+
+func (r Rule) Wrap(h http.Handler) (http.Handler, error)
+    Wrap directly wraps a handler with CORS middleware. Returns an error if the
+    configuration is invalid.
+
