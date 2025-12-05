@@ -7,6 +7,7 @@ A fluent, zero-allocation CORS middleware for Go.
 ```go
 import "github.com/ahimsalabs/cors"
 ```
+![IDE autocomplete showing PublicRule has no AllowCredentials method](doc/screenshot.png)
 
 ## Usage
 
@@ -60,11 +61,7 @@ http.Handle("/api", cors.AnyOrigin().MustWrap(handler))
 
 ## Security
 
-**Compile-time:** `AnyOrigin()` returns `PublicRule` without `AllowCredentials()`:
-
-```go
-cors.AnyOrigin().AllowCredentials()  // won't compile
-```
+**Compile-time:** `AnyOrigin()` returns `PublicRule` without `AllowCredentials()` (see pic above)
 
 **Validation** rejects:
 - `http://` origins with credentials (except localhost)
