@@ -75,6 +75,18 @@ http.Handle("/api", cors.AnyOrigin().MustWrap(handler))
 
 IDN domains must use punycode.
 
+## References & Acknowledgments
+
+This package was informed by:
+
+- [**jub0bs/cors**](https://github.com/jub0bs/cors) - A production-grade CORS library with radix tree pattern matching (efficient for 100s of origins), structured errors for multi-tenant SaaS, IDNA validation, atomic reconfiguration, and comprehensive Fetch spec compliance. If you need those features or prefer declarative config over fluent APIs, use jub0bs/cors. Consider [sponsoring Julien's work](https://github.com/sponsors/jub0bs).
+- Julien's blog post [*Fearless CORS*](https://jub0bs.com/posts/2023-02-08-fearless-cors/) - Comprehensive analysis of CORS security pitfalls
+- [Fetch Living Standard](https://fetch.spec.whatwg.org/) - Defines forbidden methods and headers
+- [RFC 6454](https://www.rfc-editor.org/rfc/rfc6454) - The Web Origin Concept (default port elision)
+- [PortSwigger Research](https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties) - "null" origin vulnerability
+
+This package uses a different API design (fluent builder with compile-time safety via types) but implements the same security validations as jub0bs/cors where applicable.
+
 ## License
 
 MIT
