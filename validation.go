@@ -166,12 +166,10 @@ func validateOrigin(origin string, checkCredentials bool) error {
 
 // parseOriginParts extracts scheme and host:port from an origin URL.
 func parseOriginParts(origin string) (scheme, hostPort string, ok bool) {
-	idx := strings.Index(origin, "://")
-	if idx == -1 {
+	scheme, hostPort, ok = strings.Cut(origin, "://")
+	if !ok {
 		return "", "", false
 	}
-	scheme = origin[:idx]
-	hostPort = origin[idx+3:]
 
 	if strings.ContainsAny(hostPort, "/?#") {
 		return "", "", false
