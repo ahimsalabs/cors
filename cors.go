@@ -145,12 +145,10 @@ func matchesOrigin(c *config, origin string) bool {
 // extractHost extracts the host from an origin URL without allocating.
 // Origin format: scheme "://" host [ ":" port ]
 func extractHost(origin string) string {
-	// Find "://"
-	idx := strings.Index(origin, "://")
-	if idx == -1 {
+	_, rest, ok := strings.Cut(origin, "://")
+	if !ok {
 		return ""
 	}
-	rest := origin[idx+3:]
 
 	// Find end of host (port separator or end of string)
 	if colonIdx := strings.IndexByte(rest, ':'); colonIdx != -1 {
