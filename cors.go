@@ -151,11 +151,11 @@ func extractHost(origin string) string {
 	}
 
 	// Find end of host (port separator or end of string)
-	if colonIdx := strings.IndexByte(rest, ':'); colonIdx != -1 {
-		return rest[:colonIdx]
+	if host, _, ok := strings.Cut(rest, ":"); ok {
+		return host
 	}
-	if slashIdx := strings.IndexByte(rest, '/'); slashIdx != -1 {
-		return rest[:slashIdx]
+	if host, _, ok := strings.Cut(rest, "/"); ok {
+		return host
 	}
 	return rest
 }
