@@ -65,15 +65,9 @@ func Origins(origins ...string) Rule {
 // Matching requires a dot boundary, preventing "evilexample.com" from matching "example.com".
 func OriginSuffix(suffix string) Rule {
 	// Check for port wildcard
-	portWildcard := strings.HasSuffix(suffix, ":*")
-	if portWildcard {
-		suffix = suffix[:len(suffix)-2] // remove ":*"
-	}
+	suffix, portWildcard := strings.CutSuffix(suffix, ":*")
 
-	suffixOnly := strings.HasPrefix(suffix, ".")
-	if suffixOnly {
-		suffix = suffix[1:] // remove leading dot for storage
-	}
+	suffix, suffixOnly := strings.CutPrefix(suffix, ".")
 	return Rule{c: config{
 		matchType:    matchSuffix,
 		suffix:       suffix,
